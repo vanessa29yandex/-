@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>💌 Приглашение на свидание</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #fff0f6 0%, #f5f0ff 50%, #f0f8ff 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .app {
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 8px 40px rgba(245, 96, 144, 0.15);
+      width: 100%;
+      max-width: 520px;
+      min-height: 540px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .page {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 540px;
+      padding: 2rem 1.75rem;
+      text-align: center;
+      animation: fadeIn 0.45s ease;
+    }
+    .page.active { display: flex; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes float { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
+    @keyframes heartbeat { 0%,100% { transform: scale(1); } 14% { transform: scale(1.2); } 28% { transform: scale(1); } 42% { transform: scale(1.1); } 56% { transform: scale(1); } }
+    @keyframes bounce { 0%,100% { transform: translateY(0); } 25% { transform: translateY(-7px); } }
+    @keyframes wiggle { 0%,100% { transform: rotate(0deg); } 25% { transform: rotate(-6deg); } 75% { transform: rotate(6deg); } }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+    @keyframes shimmer { 0%,100%{ opacity:0.65; } 50%{ opacity:1; } }
+    @keyframes confetti { 0% { transform: translateY(-10px) rotate(0deg); opacity:1; } 100% { transform: translateY(70px) rotate(360deg); opacity:0; } }
+
+    .emoji-big  { font-size: 80px; animation: float 3s ease-in-out infinite; display: block; margin-bottom: 0.5rem; }
+    .emoji-pulse{ font-size: 76px; animation: heartbeat 2s ease-in-out infinite; display: block; margin-bottom: 0.5rem; }
+
+    h1.title { font-size: 24px; font-weight: 600; color: #1a1a2e; margin: 0.6rem 0 0.4rem; }
+    p.subtitle { font-size: 15px; color: #666; margin-bottom: 1.25rem; max-width: 320px; line-height: 1.6; }
+
+    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 0.5rem; }
+
+    .btn-yes {
+      background: #f56090; color: white; border: none;
+      border-radius: 40px; padding: 13px 30px;
+      font-size: 16px; font-weight: 600; cursor: pointer;
+      animation: pulse 2.5s ease-in-out infinite;
+      transition: transform 0.15s, background 0.15s;
+    }
+    .btn-yes:hover { background: #e04070; transform: scale(1.06); }
+
+    .btn-also-yes {
+      background: #b983f5; color: white; border: none;
+      border-radius: 40px; padding: 13px 30px;
+      font-size: 16px; font-weight: 600; cursor: pointer;
+      transition: transform 0.15s, background 0.15s;
+    }
+    .btn-also-yes:hover { background: #9a60d8; transform: scale(1.06); }
+
+    .progress { display: flex; gap: 7px; justify-content: center; margin-bottom: 1.5rem; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: #e0e0e0; transition: background 0.3s; }
+    .dot.active { background: #f56090; }
+    .dot.done   { background: #b983f5; }
+
+    /* Place cards */
+    .place-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 11px; width: 100%; max-width: 420px; margin-top: 0.5rem; }
+    .place-card {
+      background: #fafafa; border: 2px solid #eee;
+      border-radius: 16px; padding: 1.1rem 0.5rem;
+      cursor: pointer; transition: transform 0.2s, border-color 0.2s, background 0.2s;
+      display: flex; flex-direction: column; align-items: center; gap: 7px;
+    }
+    .place-card:hover { transform: translateY(-4px); border-color: #f56090; }
+    .place-card.selected { border-color: #f56090; background: #fff0f4; }
+    .place-card .emoji-sm { font-size: 40px; animation: bounce 2s ease-in-out infinite; display: block; }
+    .place-card:nth-child(2) .emoji-sm { animation-delay: 0.3s; }
+    .place-card:nth-child(3) .emoji-sm { animation-delay: 0.6s; }
+    .place-label { font-size: 13px; font-weight: 600; color: #333; }
+
+    /* Sub cards */
+    .sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 360px; margin-top: 0.5rem; }
+    .sub-card {
+      background: #fafafa; border: 2px solid #eee;
+      border-radius: 14px; padding: 1rem 0.75rem;
+      cursor: pointer; transition: transform 0.2s, border-color 0.2s;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .sub-card:hover { transform: translateY(-3px); border-color: #b983f5; }
+    .sub-card.selected { border-color: #b983f5; background: #f5f0ff; }
+    .sub-card .emoji-sm { font-size: 34px; animation: wiggle 3s ease-in-out infinite; display: block; }
+    .sub-card:nth-child(2) .emoji-sm { animation-delay: 0.5s; }
+    .sub-card:nth-child(3) .emoji-sm { animation-delay: 1s; }
+    .sub-card:nth-child(4) .emoji-sm { animation-delay: 1.5s; }
+    .sub-label { font-size: 13px; font-weight: 600; color: #333; text-align: center; }
+
+    .btn-next {
+      background: linear-gradient(135deg, #f56090, #b983f5);
+      color: white; border: none; border-radius: 40px;
+      padding: 13px 34px; font-size: 16px; font-weight: 600;
+      cursor: pointer; margin-top: 1.25rem;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .btn-next:hover { transform: scale(1.05); opacity: 0.9; }
+    .btn-next:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+    /* Date & time */
+    .datetime-box {
+      background: #fafafa; border: 1.5px solid #eee;
+      border-radius: 18px; padding: 1.25rem 1.5rem;
+      width: 100%; max-width: 360px; margin-top: 0.5rem;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .field-label { font-size: 13px; color: #888; margin-bottom: 4px; }
+    .datetime-box input[type=date],
+    .datetime-box input[type=time] {
+      width: 100%; border: 1.5px solid #e0e0e0;
+      border-radius: 10px; padding: 10px 14px;
+      font-size: 15px; background: white; color: #1a1a2e;
+      outline: none; transition: border-color 0.2s;
+    }
+    .datetime-box input:focus { border-color: #f56090; }
+    .phone-row { display: flex; flex-direction: column; gap: 9px; }
+    .phone-input-wrap { display: flex; align-items: center; gap: 8px; }
+    .phone-emoji { font-size: 22px; }
+    .datetime-box input[type=tel] {
+      flex: 1; border: 1.5px solid #e0e0e0;
+      border-radius: 10px; padding: 10px 14px;
+      font-size: 15px; background: white; color: #1a1a2e;
+      outline: none; transition: border-color 0.2s;
+    }
+    .datetime-box input[type=tel]:focus { border-color: #f56090; }
+
+    .btn-send {
+      background: linear-gradient(135deg, #43c97e, #1baaff);
+      color: white; border: none; border-radius: 40px;
+      padding: 14px 36px; font-size: 16px; font-weight: 600;
+      cursor: pointer; margin-top: 1.25rem;
+      display: flex; align-items: center; gap: 10px;
+      transition: transform 0.15s;
+    }
+    .btn-send:hover { transform: scale(1.05); }
+    .btn-send:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* Success */
+    .success-box {
+      background: #fafafa; border-radius: 18px;
+      border: 1.5px solid #eee;
+      padding: 1.25rem 1.5rem; max-width: 360px; width: 100%; margin-top: 0.75rem;
+      font-size: 14px; color: #555; line-height: 1.9; text-align: left;
+    }
+    .success-row { display: flex; align-items: center; gap: 9px; margin-bottom: 4px; }
+    .success-row span { font-size: 18px; }
+
+    .wa-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #25D366; color: white;
+      border: none; border-radius: 40px;
+      padding: 12px 24px; font-size: 14px; font-weight: 600;
+      cursor: pointer; margin: 6px 4px 0; text-decoration: none;
+      transition: transform 0.15s, background 0.15s;
+    }
+    .wa-btn:hover { transform: scale(1.04); background: #1ebe5c; }
+
+    .cal-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: white; border: 2px solid #e0e0e0;
+      border-radius: 40px; padding: 12px 24px;
+      font-size: 14px; font-weight: 600; color: #333;
+      cursor: pointer; margin: 6px 4px 0; text-decoration: none;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .cal-btn:hover { transform: scale(1.04); border-color: #f56090; }
+
+    .btn-wrap { display: flex; flex-wrap: wrap; gap: 0; justify-content: center; }
+    .note { font-size: 12px; color: #aaa; margin-top: 0.75rem; }
+    .shimmer-text { font-size: 21px; font-weight: 700; color: #f56090; margin-bottom: 1rem; animation: shimmer 2s infinite; }
+
+    /* Floating hearts background */
+    .hearts-bg { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+    .heart-float { position: absolute; animation: confetti 4s ease-in infinite; opacity: 0; }
+    .page-inner { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; width: 100%; }
+
+    /* Success star animation */
+    .big-success { font-size: 80px; display: block; animation: heartbeat 1.5s ease-in-out infinite; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <div class="hearts-bg" id="heartsBg"></div>
+
+  <!-- PAGE 1: Invitation -->
+  <div class="page active" id="p1">
+    <div class="page-inner">
+      <div class="progress">
+        <div class="dot active"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+      <span class="emoji-pulse">💌</span>
+      <h1 class="title">Ты мне нравишься!</h1>
+      <p class="subtitle">Я хочу пригласить тебя на свидание 🌹<br>Только ответь честно:</p>
+      <div class="shimmer-text">Ты пойдёшь со мной? 🥺</div>
+      <div class="btn-row">
+        <button class="btn-yes" onclick="goTo(2)">💖 Да!</button>
+        <button class="btn-also-yes" onclick="handleAlsoYes(this)">🤔 Тоже да</button>
+      </div>
+      <p class="note" style="margin-top:1rem;">* Правильных ответов ровно два 😇</p>
+    </div>
+  </div>
+
+  <!-- PAGE 2: Choose Place -->
+  <div class="page" id="p2">
+    <div class="page-inner">
+      <div class="progress">
+        <div class="dot done"></div>
+        <div class="dot active"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+      <span class="emoji-big">🗺️</span>
+      <h1 class="title">Куда пойдём?</h1>
+      <p class="subtitle">Выбери место для нашего идеального свидания!</p>
+      <div class="place-grid">
+        <div class="place-card" onclick="selectPlace('cinema', this)">
+          <span class="emoji-sm">🎬</span>
+          <span class="place-label">Кино</span>
+        </div>
+        <div class="place-card" onclick="selectPlace('restaurant', this)">
+          <span class="emoji-sm">🍽️</span>
+          <span class="place-label">Ресторан</span>
+        </div>
+        <div class="place-card" onclick="selectPlace('park', this)">
+          <span class="emoji-sm">🌳</span>
+          <span class="place-label">Парк</span>
+        </div>
+      </div>
+      <button class="btn-next" id="btn2" disabled onclick="goTo(3)">Дальше ✨</button>
+    </div>
+  </div>
+
+  <!-- PAGE 3: Sub-options -->
+  <div class="page" id="p3">
+    <div class="page-inner">
+      <div class="progress">
+        <div class="dot done"></div>
+        <div class="dot done"></div>
+        <div class="dot active"></div>
+        <div class="dot"></div>
+      </div>
+      <span class="emoji-big" id="p3emoji">🎭</span>
+      <h1 class="title" id="p3title">Уточним!</h1>
+      <p class="subtitle" id="p3sub">Выбери что-то поинтереснее</p>
+      <div class="sub-grid" id="subGrid"></div>
+      <button class="btn-next" id="btn3" disabled onclick="goTo(4)">Отлично! Дальше 🎉</button>
+    </div>
+  </div>
+
+  <!-- PAGE 4: Date & Time -->
+  <div class="page" id="p4">
+    <div class="page-inner">
+      <div class="progress">
+        <div class="dot done"></div>
+        <div class="dot done"></div>
+        <div class="dot done"></div>
+        <div class="dot active"></div>
+      </div>
+      <span class="emoji-big">📅</span>
+      <h1 class="title">Когда встречаемся?</h1>
+      <p class="subtitle">Выбери дату и время, и введи номера телефонов</p>
+      <div class="datetime-box">
+        <div>
+          <div class="field-label">📆 Дата свидания</div>
+          <input type="date" id="dateInput" onchange="checkReady()">
+        </div>
+        <div>
+          <div class="field-label">🕐 Время встречи</div>
+          <input type="time" id="timeInput" onchange="checkReady()">
+        </div>
+        <div class="phone-row">
+          <div class="field-label">📱 Номера телефонов (WhatsApp)</div>
+          <div class="phone-input-wrap">
+            <span class="phone-emoji">💁</span>
+            <input type="tel" id="phone1" placeholder="+7 999 123 45 67 (мой)" oninput="checkReady()">
+          </div>
+          <div class="phone-input-wrap">
+            <span class="phone-emoji">🥰</span>
+            <input type="tel" id="phone2" placeholder="+7 999 765 43 21 (любимого/ой)" oninput="checkReady()">
+          </div>
+        </div>
+      </div>
+      <button class="btn-send" id="btnSend" disabled onclick="sendInvite()">
+        <span>💌</span> Отправить приглашение!
+      </button>
+    </div>
+  </div>
+
+  <!-- PAGE 5: Success -->
+  <div class="page" id="p5">
+    <div class="page-inner">
+      <div class="progress">
+        <div class="dot done"></div>
+        <div class="dot done"></div>
+        <div class="dot done"></div>
+        <div class="dot done" style="background:#43c97e;"></div>
+      </div>
+      <span class="big-success">🎊</span>
+      <h1 class="title">Готово! Свидание запланировано 💕</h1>
+      <p class="subtitle" id="summaryText">Детали твоего романтического вечера:</p>
+      <div class="success-box" id="summaryBox"></div>
+      <div class="btn-wrap" id="actionBtns"></div>
+      <p class="note">* Откроется WhatsApp с готовым сообщением</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  let place = '', sub = '';
+
+  const subOptions = {
+    cinema: {
+      emoji: '🎬', title: 'Какой фильм?', sub: 'Выбери жанр для нашего вечера в кино 🍿',
+      items: [
+        { e: '😂', l: 'Комедия' }, { e: '💘', l: 'Романтика' },
+        { e: '😱', l: 'Триллер' }, { e: '🚀', l: 'Фантастика' }
+      ]
+    },
+    restaurant: {
+      emoji: '🍽️', title: 'Какая кухня?', sub: 'Что будем есть, дорогой/дорогая? 😋',
+      items: [
+        { e: '🍣', l: 'Японская' }, { e: '🍕', l: 'Итальянская' },
+        { e: '🥩', l: 'Стейки' }, { e: '🌮', l: 'Мексиканская' }
+      ]
+    },
+    park: {
+      emoji: '🌳', title: 'Чем займёмся?', sub: 'Что нас ждёт в парке? 🌸',
+      items: [
+        { e: '🧺', l: 'Пикник' }, { e: '🚲', l: 'На велосипеде' },
+        { e: '🦆', l: 'Кормить уток' }, { e: '⭐', l: 'Смотреть звёзды' }
+      ]
+    }
+  };
+
+  const placeEmoji = { cinema: '🎬', restaurant: '🍽️', park: '🌳' };
+  const placeRu    = { cinema: 'Кино', restaurant: 'Ресторан', park: 'Парк' };
+
+  function selectPlace(p, el) {
+    place = p; sub = '';
+    document.querySelectorAll('.place-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('btn2').disabled = false;
+  }
+
+  function selectSub(s, el) {
+    sub = s;
+    document.querySelectorAll('.sub-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('btn3').disabled = false;
+  }
+
+  function goTo(n) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('p' + n).classList.add('active');
+    if (n === 3) buildSubPage();
+    spawnHearts();
+  }
+
+  function buildSubPage() {
+    const opt = subOptions[place];
+    document.getElementById('p3emoji').textContent = opt.emoji;
+    document.getElementById('p3title').textContent = opt.title;
+    document.getElementById('p3sub').textContent   = opt.sub;
+    document.getElementById('btn3').disabled = true;
+    const grid = document.getElementById('subGrid');
+    grid.innerHTML = '';
+    opt.items.forEach(item => {
+      const d = document.createElement('div');
+      d.className = 'sub-card';
+      d.innerHTML = `<span class="emoji-sm">${item.e}</span><span class="sub-label">${item.l}</span>`;
+      d.onclick = () => selectSub(item.l, d);
+      grid.appendChild(d);
+    });
+  }
+
+  function handleAlsoYes(btn) {
+    btn.textContent = '🥳 Правильный выбор!';
+    btn.style.background = '#f56090';
+    setTimeout(() => goTo(2), 600);
+  }
+
+  function checkReady() {
+    const d  = document.getElementById('dateInput').value;
+    const t  = document.getElementById('timeInput').value;
+    const p1 = document.getElementById('phone1').value.trim();
+    const p2 = document.getElementById('phone2').value.trim();
+    document.getElementById('btnSend').disabled = !(d && t && p1 && p2);
+  }
+
+  function buildCalendarUrl(title, date, time) {
+    const dt  = new Date(date + 'T' + time);
+    const end = new Date(dt.getTime() + 2 * 60 * 60 * 1000);
+    function fmt(d) { return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'; }
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmt(dt)}/${fmt(end)}&details=${encodeURIComponent('Наше романтическое свидание 💕')}`;
+  }
+
+  function formatPhone(raw) { return raw.replace(/\D/g, ''); }
+
+  function sendInvite() {
+    const date  = document.getElementById('dateInput').value;
+    const time  = document.getElementById('timeInput').value;
+    const phone1 = document.getElementById('phone1').value.trim();
+    const phone2 = document.getElementById('phone2').value.trim();
+    const dateStr = new Date(date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+    const plLabel = placeRu[place];
+    const plEmoji = placeEmoji[place];
+    const msg = `💌 Романтическое приглашение!\n\n${plEmoji} Место: ${plLabel} (${sub})\n📅 Дата: ${dateStr}\n🕐 Время: ${time}\n\nЖду тебя с нетерпением! 💕`;
+    const calUrl = buildCalendarUrl(`Свидание: ${plLabel}`, date, time);
+    const ph1 = formatPhone(phone1);
+    const ph2 = formatPhone(phone2);
+    const wa1 = `https://api.whatsapp.com/send?phone=${ph1}&text=${encodeURIComponent(msg)}`;
+    const wa2 = `https://api.whatsapp.com/send?phone=${ph2}&text=${encodeURIComponent(msg)}`;
+
+    document.getElementById('summaryBox').innerHTML = `
+      <div class="success-row"><span>📍</span> <strong>${plLabel}</strong> — ${sub}</div>
+      <div class="success-row"><span>📅</span> ${dateStr}</div>
+      <div class="success-row"><span>🕐</span> ${time}</div>
+      <div class="success-row"><span>📱</span> Отправим двум людям</div>
+    `;
+    document.getElementById('actionBtns').innerHTML = `
+      <a class="wa-btn" href="${wa1}" target="_blank">💬 Отправить мне</a>
+      <a class="wa-btn" href="${wa2}" target="_blank">💬 Отправить любимому/ой</a>
+      <a class="cal-btn" href="${calUrl}" target="_blank">📅 Добавить в Google Calendar</a>
+    `;
+    goTo(5);
+    bigConfetti();
+  }
+
+  function spawnHearts() {
+    const bg = document.getElementById('heartsBg');
+    bg.innerHTML = '';
+    const h = ['💕','💖','🌸','✨','💫','🌷','💝','🎀'];
+    for (let i = 0; i < 10; i++) {
+      const el = document.createElement('div');
+      el.className = 'heart-float';
+      el.textContent = h[Math.floor(Math.random() * h.length)];
+      el.style.left = Math.random() * 90 + '%';
+      el.style.top  = Math.random() * 30 + '%';
+      el.style.animationDelay    = (Math.random() * 2) + 's';
+      el.style.animationDuration = (2.5 + Math.random() * 2) + 's';
+      el.style.fontSize = (14 + Math.floor(Math.random() * 14)) + 'px';
+      bg.appendChild(el);
+    }
+  }
+
+  function bigConfetti() {
+    const bg = document.getElementById('heartsBg');
+    bg.innerHTML = '';
+    const conf = ['🎊','🎉','💕','✨','🌟','💖','🎀','🌸','💫','🥳'];
+    for (let i = 0; i < 22; i++) {
+      const el = document.createElement('div');
+      el.className = 'heart-float';
+      el.textContent = conf[Math.floor(Math.random() * conf.length)];
+      el.style.left = Math.random() * 95 + '%';
+      el.style.top  = '-5%';
+      el.style.animationDelay    = (Math.random() * 3) + 's';
+      el.style.animationDuration = (3 + Math.random() * 3) + 's';
+      el.style.fontSize = (16 + Math.floor(Math.random() * 18)) + 'px';
+      bg.appendChild(el);
+    }
+  }
+
+  spawnHearts();
+  setInterval(spawnHearts, 8000);
+</script>
+</body>
+</html>
